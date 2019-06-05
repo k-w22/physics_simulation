@@ -1,10 +1,18 @@
 Ball[] balls = {
-	new Ball(100, 400, 20),
-	new Ball(700, 400, 80)
+	new Ball(100, 400, 40),
+	new Ball(700, 400, 40)
 };
 
 void setup() {
 	size(640, 360);
+	balls[0].velocity.x = 10;
+	balls[0].velocity.y = 0;
+	balls[1].velocity.x = 0;
+	balls[1].velocity.y = 0;
+	balls[0].position.x = 100;
+	balls[0].position.y = 200;
+	balls[1].position.x = 200;
+	balls[1].position.y = 200;
 }
 
 void draw() {

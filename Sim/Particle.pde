@@ -1,18 +1,18 @@
 class Particle {
 	//*****************CONSTANTS**************************
-	final static float GRAVITATIONAL_CONSTANT = 6674.3;
+	float GRAVITATIONAL_CONSTANT = 6.6743;
 	final static float ELECTROSTATIC_CONSTANT = 8.98755;
 	final static int OFF = 0;
 	final static int ON = 1;
 	final static float FACTOR = 0.3;
-	final static float step = 0.001;
+	final static float STEP = 0.001;
 	//****************************************************
 
 	//vars
-	PVector pos; //position
-	PVector vel; //velocity
-	PVector acc; //acceleration
-	int mass = 50;
+	PVector pos = new PVector(0, 0); //position
+	PVector vel = new PVector(0, 0); //velocity
+	PVector acc = new PVector(0, 0); //acceleration
+	int mass = 16;
 	float elasticity = 1.0;
 	color c;
 
@@ -20,98 +20,108 @@ class Particle {
 		this.c = colors[(int) random(0, 6)];
 	}
 
-	Particle(float newXpos, float newYpos, float newXvel, float newYvel, int newMass) {
+	Particle(float xpos, float ypos, float xvel, float yvel, int newMass, int colorIndex) {
 		this();
-		this.pos = new PVector(0.0, 0.0);
-		this.vel = new PVector(0.0, 0.0);
-		this.acc = new PVector(0.0, 0.0);
-		pos.set(newXpos, newYpos);
-		vel.set(newXvel, newYvel);
+		pos.set(xpos, ypos);
+		vel.set(xvel, yvel);
 		this.mass = newMass;
+		this.c = colors[colorIndex];
 
 		/* vel.set(random(1, 10), random(1, 10)); */
+		///////////////////////////////////
+		///////////////////////////////////
+		///////////////////////////////////
+		///////////////////////////////////
+		///////////////////////////////////
+		///////////////////////////////////
+		/* pos.set(400, 50); */
+		vel.set(1, 0);
+		///////////////////////////////////
 	}
 
-	Particle(float newXpos, float newYpos, float newZpos, float newXvel, float newYvel, float newZvel, int newMass) {
-		this();
-		this.pos = new PVector(0.0, 0.0, 0.0);
-		this.vel = new PVector(0.0, 0.0, 0.0);
-		this.acc = new PVector(0.0, 0.0, 0.0);
-		pos.set(newXpos, newYpos, newZpos);
-		vel.set(newXvel, newYvel, newZvel);
-		this.mass = newMass;
-
-		/* vel.set(random(1, 10), random(1, 10), random(1, 10)); */
-	}
-
-	float distSquared(Particle otherParticle) {
-		return pow(otherParticle.pos.x - this.pos.x, 2) + pow(otherParticle.pos.y - this.pos.y, 2);
-	}
-
-	float distSquared3(Particle otherParticle) {
-		return pow(otherParticle.pos.x - this.pos.x, 2) + pow(otherParticle.pos.y - this.pos.y, 2) + pow(otherParticle.pos.z - this.pos.z, 2);
-	}
-
-	PVector calculateAcc(Particle otherParticle) {
-		float d = sqrt(distSquared(otherParticle));
-		if (d <= 1) {
-			System.out.println("Particles occupied same location! Quitting program.");
-			System.exit(1);
-		}
-
-		//apply gravitational law
-		PVector ret = new PVector(0.0, 0.0);
-		/* PVector ret = new PVector(0.0, 0.0, 0.0); */
-		float xdiff = otherParticle.pos.x - this.pos.x;
-		float ydiff = otherParticle.pos.y - this.pos.y;
-		/* float zdiff = otherParticle.pos.z - this.pos.z; */
-		ret.set(GRAVITATIONAL_CONSTANT * otherParticle.mass / pow(d, 3) * xdiff, GRAVITATIONAL_CONSTANT * otherParticle.mass / pow(d, 3) * ydiff);
-		/* ret.set(GRAVITATIONAL_CONSTANT * otherParticle.mass / pow(d, 3) * xdiff, GRAVITATIONAL_CONSTANT * otherParticle.mass / pow(d, 3) * ydiff, GRAVITATIONAL_CONSTANT * otherParticle.mass / pow(d, 3) * zdiff); */
-
-		return ret;
-	}
-
-	void calculateVel(Particle otherParticle) {
-		PVector tmp = calculateAcc(otherParticle);
-		vel.set(vel.x + step * tmp.x, vel.y + step * tmp.y);
-		/* vel.set(vel.x + step * tmp.x, vel.y + step * tmp.y, vel.z + step * tmp.z); */
-	}
-
-	void calculatePos(Particle otherParticle) {
-		calculateVel(otherParticle);
-		pos.set(pos.x + step * vel.x, pos.y + step * vel.y);
-		/* pos.set(pos.x + step * vel.x, pos.y + step * vel.y, pos.z + step * vel.z); */
-	}
-
-	void move(Particle[] particles, int particle) {
-		/* collide(particles, particle); */
-
-		//when encountering canvas edge
-		if (this.pos.x > 650 - this.mass || this.pos.x < this.mass) this.vel.x = -this.vel.x;
-		if (50 - this.pos.y > -this.mass || 600 - this.pos.y < this.mass) this.vel.y = -this.vel.y;
-
-		for (int i = 0; i < particles.length; i++) {
-			if (i != particle) calculatePos(particles[i]);
-		}
-
-		this.pos.set(this.pos.x + this.vel.x, this.pos.y + this.vel.y);
-		/* this.pos.set(this.pos.x + this.vel.x, this.pos.y + this.vel.y, thispos.z + this.vel.z); */
-
-		fill(this.c);
-		ellipse(this.pos.x, 600 - this.pos.y, (float) this.mass, (float) this.mass);
-	}
-
-	void collide(Particle[] particles, int particle) {
-		for (int i = 0; i < particles.length; i++) {
-			if (i != particle) {
-				//detect collision
-				float d = distSquared(particles[i]);
-				if (d <= FACTOR * pow(this.mass + particles[i].mass, 2)) {
-					this.vel.set(-this.vel.x, -this.vel.y);
+	PVector calculateForces() {
+		PVector netForce = new PVector(0.0, 0.0);
+		PVector force = new PVector(0.0, 0.0);
+		float d = 0;
+		for (int particle = 0; particle < existingParticles; particle++) {
+			if (particles[particle] != this) {
+				force = PVector.sub(particles[particle].pos, this.pos);
+				d = force.mag();
+				if (d <= 1) {
+					System.out.println("Particles occupied same location! Quitting program.");
+					/* System.exit(1); */
 				}
+				/* d = constrain(d, 1.0, 25.0); */
+				force.normalize();
+				float strength = (GRAVITATIONAL_CONSTANT * this.mass * particles[particle].mass) / (d * d);
+				force.mult(strength);
+				netForce.add(force);
 			}
 		}
+		/* for (Attractor attractor : attractors) { */
+		/*     force = PVector.sub(attractor.pos, this.pos); */
+		/*     d = force.mag(); */
+		/*     if (d <= 1) { */
+		/*         System.out.println("Particles occupied same location! Quitting program."); */
+		/*         [> System.exit(1); <] */
+		/*     } */
+		/*     d = constrain(d, 5.0, 25.0); */
+		/*     force.normalize(); */
+		/*     float strength = (GRAVITATIONAL_CONSTANT * this.mass * attractor.mass) / (d * d); */
+		/*     force.mult(strength); */
+		/*     netForce.add(force); */
+		/* } */
+		return netForce;
 	}
+
+	void calculateAcc() {
+		PVector f = PVector.div(calculateForces(), this.mass);
+		acc.add(f);
+	}
+
+	void update() {
+		calculateAcc();
+		vel.add(acc);
+		pos.add(vel);
+		acc.mult(0);
+	}
+
+	void display() {
+		strokeWeight(1);
+		stroke(this.c);
+		fill(this.c);
+		ellipse(pos.x, pos.y, mass, mass);
+	}
+
+	/* void move(Particle[] particles, int particle) { */
+	/*     [> collide(particles, particle); <] */
+
+	/*     //when encountering canvas edge */
+	/*     if (this.pos.x > 650 - this.mass || this.pos.x < this.mass) this.vel.x = -this.vel.x; */
+	/*     if (50 - this.pos.y > -this.mass || 600 - this.pos.y < this.mass) this.vel.y = -this.vel.y; */
+
+	/*     for (int i = 0; i < particles.length; i++) { */
+	/*         if (i != particle) calculatePos(particles[i]); */
+	/*     } */
+
+	/*     this.pos.set(this.pos.x + this.vel.x, this.pos.y + this.vel.y); */
+	/*     [> this.pos.set(this.pos.x + this.vel.x, this.pos.y + this.vel.y, thispos.z + this.vel.z); <] */
+
+	/*     fill(this.c); */
+	/*     ellipse(this.pos.x, 600 - this.pos.y, (float) this.mass, (float) this.mass); */
+	/* } */
+
+	/* void collide(Particle[] particles, int particle) { */
+	/*     for (int i = 0; i < particles.length; i++) { */
+	/*         if (i != particle) { */
+	/*             //detect collision */
+	/*             float d = distSquared(particles[i]); */
+	/*             if (d <= FACTOR * pow(this.mass + particles[i].mass, 2)) { */
+	/*                 this.vel.set(-this.vel.x, -this.vel.y); */
+	/*             } */
+	/*         } */
+	/*     } */
+	/* } */
 
 	void getProp() {
 		System.out.println("pos: (" + pos.x + ", " + pos.y + ")");
