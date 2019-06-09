@@ -1,10 +1,8 @@
 class Particle {
 	//*****************CONSTANTS**************************
-	float GRAVITATIONAL_CONSTANT = 6.6743;
+	float GRAVITATIONAL_CONSTANT = 66.743;
 	final static float ELECTROSTATIC_CONSTANT = 8.98755;
-	final static int OFF = 0;
-	final static int ON = 1;
-	final static float FACTOR = 0.3;
+	final static float FACTOR = 1;
 	final static float STEP = 0.001;
 	//****************************************************
 
@@ -14,6 +12,8 @@ class Particle {
 	PVector acc = new PVector(0, 0); //acceleration
 	int mass = 16;
 	float elasticity = 1.0;
+	float pe = 0;
+	float ke = 0;
 	color c;
 
 	Particle() {
@@ -27,50 +27,42 @@ class Particle {
 		this.mass = newMass;
 		this.c = colors[colorIndex];
 
+		pos.set(250, 400);
+		/* vel.set(1, 0); */
 		/* vel.set(random(1, 10), random(1, 10)); */
-		///////////////////////////////////
-		///////////////////////////////////
-		///////////////////////////////////
-		///////////////////////////////////
-		///////////////////////////////////
-		///////////////////////////////////
-		/* pos.set(400, 50); */
-		vel.set(1, 0);
-		///////////////////////////////////
 	}
 
 	PVector calculateForces() {
 		PVector netForce = new PVector(0.0, 0.0);
 		PVector force = new PVector(0.0, 0.0);
 		float d = 0;
-		for (int particle = 0; particle < existingParticles; particle++) {
-			if (particles[particle] != this) {
-				force = PVector.sub(particles[particle].pos, this.pos);
-				d = force.mag();
-				if (d <= 1) {
-					System.out.println("Particles occupied same location! Quitting program.");
-					/* System.exit(1); */
-				}
-				/* d = constrain(d, 1.0, 25.0); */
-				force.normalize();
-				float strength = (GRAVITATIONAL_CONSTANT * this.mass * particles[particle].mass) / (d * d);
-				force.mult(strength);
-				netForce.add(force);
-			}
-		}
-		/* for (Attractor attractor : attractors) { */
-		/*     force = PVector.sub(attractor.pos, this.pos); */
-		/*     d = force.mag(); */
-		/*     if (d <= 1) { */
-		/*         System.out.println("Particles occupied same location! Quitting program."); */
-		/*         [> System.exit(1); <] */
+		/* for (int particle = 0; particle < existingParticles; particle++) { */
+		/*     if (particles[particle] != this) { */
+		/*         force = PVector.sub(particles[particle].pos, this.pos); */
+		/*         d = force.mag(); */
+		/*         if (d <= 5) { */
+		/*             System.out.println("Particles occupied same location! Quitting program."); */
+		/*             [> System.exit(1); <] */
+		/*         } */
+		/*         d = constrain(d, 1.0, 25.0); */
+		/*         force.normalize(); */
+		/*         float strength = (GRAVITATIONAL_CONSTANT * this.mass * particles[particle].mass) / (d * d); */
+		/*         force.mult(strength); */
+		/*         netForce.add(force); */
 		/*     } */
-		/*     d = constrain(d, 5.0, 25.0); */
-		/*     force.normalize(); */
-		/*     float strength = (GRAVITATIONAL_CONSTANT * this.mass * attractor.mass) / (d * d); */
-		/*     force.mult(strength); */
-		/*     netForce.add(force); */
 		/* } */
+		for (Attractor attractor : attractors) {
+			force = PVector.sub(attractor.pos, this.pos);
+			d = force.mag();
+			if (d <= 5) {
+				System.out.println("Particles occupied same location! Quitting program.");
+				/* System.exit(1); */
+			}
+			force.normalize();
+			float strength = (GRAVITATIONAL_CONSTANT * this.mass * attractor.mass) / (d * d);
+			force.mult(strength);
+			netForce.add(force);
+		}
 		return netForce;
 	}
 
@@ -84,6 +76,26 @@ class Particle {
 		vel.add(acc);
 		pos.add(vel);
 		acc.mult(0);
+		ke = 0.5 * this.mass * this.vel.magSq();
+		for (Attractor attractor : attractors) pe = -0.5 * GRAVITATIONAL_CONSTANT * this.mass * attractor.mass / PVector.sub(attractor.pos, this.pos).mag();
+		//when encountering canvas edge
+		if (this.pos.x > 600 - this.mass / 2 || this.pos.x < this.mass / 2) this.vel.x = -this.vel.x;
+		if (this.pos.y < this.mass / 2 || 600 - this.pos.y < this.mass / 2) this.vel.y = -this.vel.y;
+		for (Particle particle : particles) {
+			if (this != particle) {
+				//detect collision
+				PVector d = PVector.sub(particle.pos, this.pos);
+				if (d.magSq() <= FACTOR * pow(this.mass + particle.mass, 2)) {
+					this.vel.set(-this.vel.x, -this.vel.y);
+				}
+			}
+		}
+		for (Attractor attractor: attractors) {
+			PVector d = PVector.sub(attractor.pos, this.pos);
+			if (d.magSq() <= FACTOR * pow(this.mass + attractor.mass, 2)) {
+				this.vel.set(-this.vel.x, -this.vel.y);
+			}
+		}
 	}
 
 	void display() {

@@ -11,34 +11,27 @@ color[] colors = {gold, red, blue, wood, pink, moss};
 
 PVector com = new PVector(300, 300);
 int comm = 0;
+float pe = 0;
+float ke = 0;
+float te = 0;
 
-final static int MAX_NUMBER = 6; //max number of particles in canvas
+final static int MAX_NUMBER = 1; //max number of particles in canvas
 int existingParticles = 0; //number of particles in canvas
 Particle[] particles;
-
-//////////////////////////////////////////
-//////////////////////////////////////////
-//////////////////////////////////////////
-//////////////////////////////////////////
-//////////////////////////////////////////
-//////////////////////////////////////////
-//////////////////////////////////////////
 Attractor[] attractors;
-//////////////////////////////////////////
 
 void setup() {
 	size(800, 600);
-	background(75);
 	/* frameRate(60); */
 
-	//////////////////////////////////////////
-	//////////////////////////////////////////
-	//////////////////////////////////////////
-	//////////////////////////////////////////
-	//////////////////////////////////////////
-	//////////////////////////////////////////
-	//////////////////////////////////////////
 	particles = new Particle[MAX_NUMBER]; //create array with 0 meaningful elements
+	//////////////////////////////////////////
+	//////////////////////////////////////////
+	//////////////////////////////////////////
+	//////////////////////////////////////////
+	//////////////////////////////////////////
+	//////////////////////////////////////////
+	//////////////////////////////////////////
 	for (int i = 0; i < MAX_NUMBER; i++) {
 		particles[i] = new Particle((int) random(8, 592), 600 - (int) random(8, 592), 0, 0, 16, existingParticles);
 		existingParticles++;
@@ -47,29 +40,40 @@ void setup() {
 	for (int i = 0; i < MAX_NUMBER; i++) particles[i].getProp();
 
 	attractors = new Attractor[2];
-	attractors[0] = new Attractor();
-	attractors[1] = new Attractor(200, 200);
+	attractors[0] = new Attractor(300, 300);
+	attractors[1] = new Attractor(200, 300);
 	//////////////////////////////////////////
 }
 
 void draw() {
-	clear(); //creates illusion of animation
 	background(75);
+
+	//panel
 	strokeWeight(1);
 	stroke(200);
 	fill(200);
 	rect(600, 0, 200, 600);
+	fill(0);
+	textSize(32);
+	textAlign(CENTER);
+	text(pe, 700, 100);
+	text(ke, 700, 200);
+	te = ke + pe;
+	text(te, 700, 300);
 
 	for (Particle particle : particles) particle.update();
 	for (Particle particle : particles) particle.display();
 
-	//center of mass
+	//center of mass and kinetic energy
 	com.mult(0);
 	comm = 0;
+	ke = 0;
 	for (Particle particle : particles) {
 		com.x += particle.mass * particle.pos.x;
 		com.y += particle.mass * particle.pos.y;
 		comm += particle.mass;
+		ke += particle.ke;
+		pe += particle.pe;
 	}
 	com.x /= comm;
 	com.y /= comm;

@@ -1,18 +1,10 @@
-Ball[] balls = {
-	new Ball(100, 400, 40),
-	new Ball(700, 400, 40)
+Ball[] balls =  {
+	new Ball(200, 200, 20, 1, 0),
+	new Ball(400, 200, 20, -1 ,0)
 };
 
 void setup() {
-	size(640, 360);
-	balls[0].velocity.x = 10;
-	balls[0].velocity.y = 0;
-	balls[1].velocity.x = 0;
-	balls[1].velocity.y = 0;
-	balls[0].position.x = 100;
-	balls[0].position.y = 200;
-	balls[1].position.x = 200;
-	balls[1].position.y = 200;
+	size(600, 400);
 }
 
 void draw() {
@@ -36,15 +28,18 @@ void draw() {
 class Ball {
 	PVector position;
 	PVector velocity;
+	float COR = 1.5;
 
 	float radius, m;
 
-	Ball(float x, float y, float r_) {
+	Ball(float x, float y, float r_, float vx, float vy) {
 		position = new PVector(x, y);
-		velocity = PVector.random2D();
-		velocity.mult(3);
+		//velocity = PVector.random2D();
+		//velocity.mult(3);
 		radius = r_;
-		m = radius * 0.1;
+		m = radius*.1;
+		velocity = new PVector();
+		velocity.set(vx, vy);
 	}
 
 	void update() {
@@ -85,80 +80,31 @@ class Ball {
 			other.position.add(correctionVector);
 			position.sub(correctionVector);
 
-			// get angle of distanceVect
-			float theta  = distanceVect.heading();
-			// precalculate trig values
-			float sine = sin(theta);
-			float cosine = cos(theta);
 
-			/* bTemp will hold rotated ball positions. You
-			   just need to worry about bTemp[1] position*/
-			PVector[] bTemp = {
-				new PVector(), new PVector()
-			};
+			PVector collisionPoint = new PVector((position.x + other.position.x) / 2, (position.y + other.position.y) / 2);
+			PVector normal = PVector.sub(position, collisionPoint);
+			PVector tangent = normal.copy();
+			tangent.rotate(-HALF_PI);
+			PVector vn = sdot(vdot(velocity, normal) / normal.magSq(), normal);
+			PVector ovn = sdot(vdot(other.velocity, normal) / normal.magSq(), normal);
+			PVector vt = sdot(vdot(velocity, tangent) / tangent.magSq(), tangent);
+			PVector ovt = sdot(vdot(other.velocity, tangent) / tangent.magSq(), tangent);
 
-			/* this ball's position is relative to the other
-			   so you can use the vector between them (bVect) as the
-			   reference point in the rotation expressions.
-			   bTemp[0].position.x and bTemp[0].position.y will initialize
-			   automatically to 0.0, which is what you want
-			   since b[1] will rotate around b[0] */
-			bTemp[1].x  = cosine * distanceVect.x + sine * distanceVect.y;
-			bTemp[1].y  = cosine * distanceVect.y - sine * distanceVect.x;
+			float a = (COR * other.m * (sign(ovn, normal) * ovn.mag() - sign(vn, normal) * vn.mag()) + m * sign(vn, normal) * vn.mag() + other.m * sign(ovn, normal) * ovn.mag()) / (m + other.m);
+			PVector fvn = normal.copy();
+			(fvn.normalize()).mult(a);
 
-			// rotate Temporary velocities
-			PVector[] vTemp = {
-				new PVector(), new PVector()
-			};
+			float b = (COR * m * (sign(vn, normal) * vn.mag() - sign(ovn, normal) * ovn.mag()) + m * sign(vn, normal) * vn.mag() + other.m * sign(ovn, normal) * ovn.mag()) / (m + other.m);
+			PVector fovn = normal.copy();
+			(fovn.normalize()).mult(b);
 
-			vTemp[0].x  = cosine * velocity.x + sine * velocity.y;
-			vTemp[0].y  = cosine * velocity.y - sine * velocity.x;
-			vTemp[1].x  = cosine * other.velocity.x + sine * other.velocity.y;
-			vTemp[1].y  = cosine * other.velocity.y - sine * other.velocity.x;
-
-			/* Now that velocities are rotated, you can use 1D
-			   conservation of momentum equations to calculate
-			   the final velocity along the x-axis. */
-			PVector[] vFinal = {
-				new PVector(), new PVector()
-			};
-
-			// final rotated velocity for b[0]
-			vFinal[0].x = ((m - other.m) * vTemp[0].x + 2 * other.m * vTemp[1].x) / (m + other.m);
-			vFinal[0].y = vTemp[0].y;
-
-			// final rotated velocity for b[0]
-			vFinal[1].x = ((other.m - m) * vTemp[1].x + 2 * m * vTemp[0].x) / (m + other.m);
-			vFinal[1].y = vTemp[1].y;
-
-			// hack to avoid clumping
-			bTemp[0].x += vFinal[0].x;
-			bTemp[1].x += vFinal[1].x;
-
-			/* Rotate ball positions and velocities back
-			   Reverse signs in trig expressions to rotate
-			   in the opposite direction */
-			// rotate balls
-			PVector[] bFinal = {
-				new PVector(), new PVector()
-			};
-
-			bFinal[0].x = cosine * bTemp[0].x - sine * bTemp[0].y;
-			bFinal[0].y = cosine * bTemp[0].y + sine * bTemp[0].x;
-			bFinal[1].x = cosine * bTemp[1].x - sine * bTemp[1].y;
-			bFinal[1].y = cosine * bTemp[1].y + sine * bTemp[1].x;
-
-			// update balls to screen position
-			other.position.x = position.x + bFinal[1].x;
-			other.position.y = position.y + bFinal[1].y;
-
-			position.add(bFinal[0]);
 
 			// update velocities
-			velocity.x = cosine * vFinal[0].x - sine * vFinal[0].y;
-			velocity.y = cosine * vFinal[0].y + sine * vFinal[0].x;
-			other.velocity.x = cosine * vFinal[1].x - sine * vFinal[1].y;
-			other.velocity.y = cosine * vFinal[1].y + sine * vFinal[1].x;
+			velocity.set(vt.x + fvn.x, vt.y + fvn.y);
+			other.velocity.set(ovt.x + fovn.x, ovt.y + fovn.y);
+
+			position.add(velocity);
+			other.position.add(other.velocity);
 		}
 	}
 
@@ -167,4 +113,18 @@ class Ball {
 		fill(204);
 		ellipse(position.x, position.y, radius*2, radius*2);
 	}
+}
+
+float vdot(PVector a, PVector b) {
+	return a.x * b.x + a.y * b.y;
+}
+
+PVector sdot(float c, PVector v) {
+	PVector p = new PVector(c * v.x, c * v.y);
+	return p;
+}
+
+float sign(PVector a, PVector b) {
+	if (vdot(a, b) == 0) return 0;
+	return vdot(a, b) / abs(vdot(a, b));
 }
