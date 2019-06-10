@@ -15,13 +15,13 @@ float pe = 0;
 float ke = 0;
 float te = 0;
 
-final static int MAX_NUMBER = 1; //max number of particles in canvas
+final static int MAX_NUMBER = 6; //max number of particles in canvas
 int existingParticles = 0; //number of particles in canvas
 Particle[] particles;
 Attractor[] attractors;
 
 void setup() {
-	size(800, 600);
+	size(1000, 800);
 	/* frameRate(60); */
 
 	particles = new Particle[MAX_NUMBER]; //create array with 0 meaningful elements
@@ -33,41 +33,28 @@ void setup() {
 	//////////////////////////////////////////
 	//////////////////////////////////////////
 	for (int i = 0; i < MAX_NUMBER; i++) {
-		particles[i] = new Particle((int) random(8, 592), 600 - (int) random(8, 592), 0, 0, 16, existingParticles);
+		particles[i] = new Particle((int) random(8, 792), 800 - (int) random(8, 792), 0, 0, 16, existingParticles);
 		existingParticles++;
 	}
 
 	for (int i = 0; i < MAX_NUMBER; i++) particles[i].getProp();
 
 	attractors = new Attractor[2];
-	attractors[0] = new Attractor(300, 300);
-	attractors[1] = new Attractor(200, 300);
+	attractors[0] = new Attractor(500, 400);
+	attractors[1] = new Attractor(100, 400);
 	//////////////////////////////////////////
 }
 
 void draw() {
 	background(75);
 
-	//panel
-	strokeWeight(1);
-	stroke(200);
-	fill(200);
-	rect(600, 0, 200, 600);
-	fill(0);
-	textSize(32);
-	textAlign(CENTER);
-	text(pe, 700, 100);
-	text(ke, 700, 200);
-	te = ke + pe;
-	text(te, 700, 300);
-
 	for (Particle particle : particles) particle.update();
 	for (Particle particle : particles) particle.display();
 
-	//center of mass and kinetic energy
+	//center of mass and energy
 	com.mult(0);
 	comm = 0;
-	ke = 0;
+	ke = pe = te = 0;
 	for (Particle particle : particles) {
 		com.x += particle.mass * particle.pos.x;
 		com.y += particle.mass * particle.pos.y;
@@ -95,6 +82,19 @@ void draw() {
 		attractor.display();
 	}
 	//////////////////////////////////////////
+
+	//panel
+	strokeWeight(1);
+	stroke(200);
+	fill(200);
+	rect(800, 0, 200, 800);
+	fill(0);
+	textSize(32);
+	textAlign(CENTER);
+	text(pe, 900, 100);
+	text(ke, 900, 200);
+	te = ke + pe;
+	text(te, 900, 300);
 }
 
 void mousePressed() {

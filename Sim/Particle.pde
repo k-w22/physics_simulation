@@ -4,6 +4,8 @@ class Particle {
 	final static float ELECTROSTATIC_CONSTANT = 8.98755;
 	final static float FACTOR = 1;
 	final static float STEP = 0.001;
+	final static int ON = 1;
+	final static int OFF = 0;
 	//****************************************************
 
 	//vars
@@ -11,7 +13,7 @@ class Particle {
 	PVector vel = new PVector(0, 0); //velocity
 	PVector acc = new PVector(0, 0); //acceleration
 	int mass = 16;
-	float elasticity = 1.0;
+	float elasticity = 0.5;
 	float pe = 0;
 	float ke = 0;
 	color c;
@@ -27,8 +29,8 @@ class Particle {
 		this.mass = newMass;
 		this.c = colors[colorIndex];
 
-		pos.set(250, 400);
-		/* vel.set(1, 0); */
+		/* pos.set(300, 200); */
+		vel.set(1, 0);
 		/* vel.set(random(1, 10), random(1, 10)); */
 	}
 
@@ -36,33 +38,33 @@ class Particle {
 		PVector netForce = new PVector(0.0, 0.0);
 		PVector force = new PVector(0.0, 0.0);
 		float d = 0;
-		/* for (int particle = 0; particle < existingParticles; particle++) { */
-		/*     if (particles[particle] != this) { */
-		/*         force = PVector.sub(particles[particle].pos, this.pos); */
-		/*         d = force.mag(); */
-		/*         if (d <= 5) { */
-		/*             System.out.println("Particles occupied same location! Quitting program."); */
-		/*             [> System.exit(1); <] */
-		/*         } */
-		/*         d = constrain(d, 1.0, 25.0); */
-		/*         force.normalize(); */
-		/*         float strength = (GRAVITATIONAL_CONSTANT * this.mass * particles[particle].mass) / (d * d); */
-		/*         force.mult(strength); */
-		/*         netForce.add(force); */
-		/*     } */
-		/* } */
-		for (Attractor attractor : attractors) {
-			force = PVector.sub(attractor.pos, this.pos);
-			d = force.mag();
-			if (d <= 5) {
-				System.out.println("Particles occupied same location! Quitting program.");
-				/* System.exit(1); */
+		for (Particle particle : particles) {
+			if (particle != this) {
+				force = PVector.sub(particle.pos, this.pos);
+				d = force.mag();
+				if (d <= 5) {
+					System.out.println("Particles occupied same location! Quitting program.");
+					/* System.exit(1); */
+				}
+				d = constrain(d, 100.0, 1000.0);
+				force.normalize();
+				float strength = (GRAVITATIONAL_CONSTANT * this.mass * particle.mass) / (d * d);
+				force.mult(strength);
+				netForce.add(force);
 			}
-			force.normalize();
-			float strength = (GRAVITATIONAL_CONSTANT * this.mass * attractor.mass) / (d * d);
-			force.mult(strength);
-			netForce.add(force);
 		}
+		/* for (Attractor attractor : attractors) { */
+		/*     force = PVector.sub(attractor.pos, this.pos); */
+		/*     d = force.mag(); */
+		/*     if (d <= 5) { */
+		/*         System.out.println("Particles occupied same location! Quitting program."); */
+		/*         System.exit(1); */
+		/*     } */
+		/*     force.normalize(); */
+		/*     float strength = (GRAVITATIONAL_CONSTANT * this.mass * attractor.mass) / (d * d); */
+		/*     force.mult(strength); */
+		/*     netForce.add(force); */
+		/* } */
 		return netForce;
 	}
 
@@ -76,26 +78,65 @@ class Particle {
 		vel.add(acc);
 		pos.add(vel);
 		acc.mult(0);
+
 		ke = 0.5 * this.mass * this.vel.magSq();
+		pe = 0;
+		for (Particle particle : particles) {
+			if (particle != this) pe += -0.5 * GRAVITATIONAL_CONSTANT * this.mass * particle.mass / PVector.sub(particle.pos, this.pos).mag();
+
 		for (Attractor attractor : attractors) pe = -0.5 * GRAVITATIONAL_CONSTANT * this.mass * attractor.mass / PVector.sub(attractor.pos, this.pos).mag();
+		}
+
 		//when encountering canvas edge
-		if (this.pos.x > 600 - this.mass / 2 || this.pos.x < this.mass / 2) this.vel.x = -this.vel.x;
-		if (this.pos.y < this.mass / 2 || 600 - this.pos.y < this.mass / 2) this.vel.y = -this.vel.y;
+		if (this.pos.x > 800 - this.mass / 2 || this.pos.x < this.mass / 2) this.vel.x = -this.vel.x;
+		if (this.pos.y < this.mass / 2 || 800 - this.pos.y < this.mass / 2) this.vel.y = -this.vel.y;
+
+		//collision with other particles
 		for (Particle particle : particles) {
 			if (this != particle) {
-				//detect collision
-				PVector d = PVector.sub(particle.pos, this.pos);
-				if (d.magSq() <= FACTOR * pow(this.mass + particle.mass, 2)) {
-					this.vel.set(-this.vel.x, -this.vel.y);
+				PVector distVec = PVector.sub(particle.pos, this.pos);
+				float distVecMag = distVec.mag();
+				float minDist = this.mass / 2 + particle.mass / 2;
+				if (distVecMag < minDist) {
+					float distCorrection = (minDist - distVecMag) / 2.0;
+					PVector d = distVec.copy();
+					PVector correctionVec = d.normalize().mult(distCorrection);
+					particle.pos.add(correctionVec);
+					this.pos.sub(correctionVec);
+
+					PVector collisionPoint = new PVector((this.pos.x + particle.pos.x) / 2, (this.pos.y + particle.pos.y) / 2);
+					PVector normal = PVector.sub(this.pos, collisionPoint);
+					PVector tangent = normal.copy();
+					tangent.rotate(-HALF_PI);
+					PVector vn = sdot(vdot(this.vel, normal) / normal.magSq(), normal);
+					PVector ovn = sdot(vdot(particle.vel, normal) / normal.magSq(), normal);
+					PVector vt = sdot(vdot(this.vel, tangent) / tangent.magSq(), tangent);
+					PVector ovt = sdot(vdot(particle.vel, tangent) / tangent.magSq(), tangent);
+
+					float a = (elasticity * particle.mass * (sign(ovn, normal) * ovn.mag() - sign(vn, normal) * vn.mag()) + this.mass * sign(vn, normal) * vn.mag() + particle.mass * sign(ovn, normal) * ovn.mag()) / (this.mass + particle.mass);
+					PVector fvn = normal.copy();
+					(fvn.normalize()).mult(a);
+
+					float b = (elasticity * this.mass * (sign(vn, normal) * vn.mag() - sign(ovn, normal) * ovn.mag()) + this.mass * sign(vn, normal) * vn.mag() + particle.mass + sign(ovn, normal) * ovn.mag()) / (this.mass + particle.mass);
+					PVector fovn = normal.copy();
+					(fovn.normalize()).mult(b);
+
+					//update velocities
+					this.vel.set(vt.x + fvn.x, vt.y + fvn.y);
+					particle.vel.set(ovt.x + fovn.x, ovt.y + fovn.y);
+
+					this.pos.add(vel);
+					particle.pos.add(particle.vel);
 				}
 			}
 		}
-		for (Attractor attractor: attractors) {
-			PVector d = PVector.sub(attractor.pos, this.pos);
-			if (d.magSq() <= FACTOR * pow(this.mass + attractor.mass, 2)) {
-				this.vel.set(-this.vel.x, -this.vel.y);
-			}
-		}
+
+		/* for (Attractor attractor: attractors) { */
+		/*     PVector d = PVector.sub(attractor.pos, this.pos); */
+		/*     if (d.mag() <= FACTOR * this.mass / 2 + attractor.mass / 2) { */
+		/*         this.vel.set(-this.vel.x, -this.vel.y); */
+		/*     } */
+		/* } */
 	}
 
 	void display() {
@@ -105,36 +146,6 @@ class Particle {
 		ellipse(pos.x, pos.y, mass, mass);
 	}
 
-	/* void move(Particle[] particles, int particle) { */
-	/*     [> collide(particles, particle); <] */
-
-	/*     //when encountering canvas edge */
-	/*     if (this.pos.x > 650 - this.mass || this.pos.x < this.mass) this.vel.x = -this.vel.x; */
-	/*     if (50 - this.pos.y > -this.mass || 600 - this.pos.y < this.mass) this.vel.y = -this.vel.y; */
-
-	/*     for (int i = 0; i < particles.length; i++) { */
-	/*         if (i != particle) calculatePos(particles[i]); */
-	/*     } */
-
-	/*     this.pos.set(this.pos.x + this.vel.x, this.pos.y + this.vel.y); */
-	/*     [> this.pos.set(this.pos.x + this.vel.x, this.pos.y + this.vel.y, thispos.z + this.vel.z); <] */
-
-	/*     fill(this.c); */
-	/*     ellipse(this.pos.x, 600 - this.pos.y, (float) this.mass, (float) this.mass); */
-	/* } */
-
-	/* void collide(Particle[] particles, int particle) { */
-	/*     for (int i = 0; i < particles.length; i++) { */
-	/*         if (i != particle) { */
-	/*             //detect collision */
-	/*             float d = distSquared(particles[i]); */
-	/*             if (d <= FACTOR * pow(this.mass + particles[i].mass, 2)) { */
-	/*                 this.vel.set(-this.vel.x, -this.vel.y); */
-	/*             } */
-	/*         } */
-	/*     } */
-	/* } */
-
 	void getProp() {
 		System.out.println("pos: (" + pos.x + ", " + pos.y + ")");
 		System.out.println("xvel: " + vel.x);
@@ -143,5 +154,21 @@ class Particle {
 		System.out.println("yacc: " + acc.y);
 		System.out.println("mass: " + mass);
 		System.out.println("elasticity: " + elasticity);
+		System.out.println("ke: " + ke);
+		System.out.println("pe: " + pe);
+	}
+
+	float vdot(PVector a, PVector b) {
+		return a.x * b.x + a.y * b.y;
+	}
+
+	PVector sdot(float c, PVector v) {
+		PVector p = new PVector(c * v.x, c * v.y);
+		return p;
+	}
+
+	float sign(PVector a, PVector b) {
+		if (vdot(a, b) == 0) return 0;
+		return vdot(a, b) / abs(vdot(a, b));
 	}
 }
