@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+
 //*********************************
 //            colors
 color gold = color(212, 175, 55);
@@ -9,7 +11,7 @@ color moss = color(173, 223, 173);
 //*********************************
 color[] colors = {gold, red, blue, wood, pink, moss};
 
-PVector com = new PVector(300, 300);
+PVector com = new PVector(400, 400);
 int comm = 0;
 float pe = 0;
 float ke = 0;
@@ -19,6 +21,10 @@ final static int MAX_NUMBER = 6; //max number of particles in canvas
 int existingParticles = 0; //number of particles in canvas
 Particle[] particles;
 Attractor[] attractors;
+
+boolean creationMode = false; //create particles?
+PVector click = new PVector(0.0, 0.0); //coordinates of initial click
+float velLen = 0;
 
 void setup() {
 	size(1000, 800);
@@ -32,12 +38,12 @@ void setup() {
 	//////////////////////////////////////////
 	//////////////////////////////////////////
 	//////////////////////////////////////////
-	for (int i = 0; i < MAX_NUMBER; i++) {
-		particles[i] = new Particle((int) random(8, 792), 800 - (int) random(8, 792), 0, 0, 16, existingParticles);
-		existingParticles++;
-	}
+	/* for (int i = 0; i < MAX_NUMBER; i++) { */
+	/*     particles[i] = new Particle((int) random(16, 784), 800 - (int) random(16, 784), 0, 0, 9, existingParticles); */
+	/*     existingParticles++; */
+	/* } */
 
-	for (int i = 0; i < MAX_NUMBER; i++) particles[i].getProp();
+	/* for (int i = 0; i < MAX_NUMBER; i++) particles[i].getProp(); */
 
 	attractors = new Attractor[2];
 	attractors[0] = new Attractor(500, 400);
@@ -48,40 +54,50 @@ void setup() {
 void draw() {
 	background(75);
 
-	for (Particle particle : particles) particle.update();
-	for (Particle particle : particles) particle.display();
-
-	//center of mass and energy
-	com.mult(0);
-	comm = 0;
-	ke = pe = te = 0;
-	for (Particle particle : particles) {
-		com.x += particle.mass * particle.pos.x;
-		com.y += particle.mass * particle.pos.y;
-		comm += particle.mass;
-		ke += particle.ke;
-		pe += particle.pe;
+	if (creationMode) {
+		stroke(255, 165, 0); //set edge color
+		fill(255, 165, 0);
+		circle(click.x, click.y, 10); //initial position
+		line(click.x, click.y, mouseX, mouseY);
+		drawArrow(mouseX, mouseY, 20, 180 / PI * atan2(mouseY - click.y, mouseX - click.x));
 	}
-	com.x /= comm;
-	com.y /= comm;
-	strokeWeight(1);
-	stroke(255);
-	fill(255);
-	ellipse(com.x, com.y, 10, 10);
 
-	//////////////////////////////////////////
-	//////////////////////////////////////////
-	//////////////////////////////////////////
-	//////////////////////////////////////////
-	//////////////////////////////////////////
-	//////////////////////////////////////////
-	//////////////////////////////////////////
-	for (Attractor attractor : attractors) {
-		attractor.drag();
-		attractor.hover(mouseX, mouseY);
-		attractor.display();
+	if (existingParticles > 0) {
+		for (Particle particle : particles) particle.update();
+		for (Particle particle : particles) particle.display();
+
+		//center of mass and energy
+		com.mult(0);
+		comm = 0;
+		ke = pe = te = 0;
+		for (Particle particle : particles) {
+			com.x += particle.mass * particle.pos.x;
+			com.y += particle.mass * particle.pos.y;
+			comm += particle.mass;
+			ke += particle.ke;
+			pe += particle.pe;
+		}
+		com.x /= comm;
+		com.y /= comm;
+		strokeWeight(1);
+		stroke(255);
+		fill(255);
+		ellipse(com.x, com.y, 10, 10);
+
+		//////////////////////////////////////////
+		//////////////////////////////////////////
+		//////////////////////////////////////////
+		//////////////////////////////////////////
+		//////////////////////////////////////////
+		//////////////////////////////////////////
+		//////////////////////////////////////////
+		for (Attractor attractor : attractors) {
+			attractor.drag();
+			attractor.hover(mouseX, mouseY);
+			attractor.display();
+		}
+		//////////////////////////////////////////
 	}
-	//////////////////////////////////////////
 
 	//panel
 	strokeWeight(1);
@@ -103,6 +119,27 @@ void mousePressed() {
 
 void mouseReleased() {
 	for (Attractor attractor : attractors) attractor.stopDragging();
+}
+
+void mouseClicked() {
+	if (!creationMode) click.set(mouseX, mouseY); //not creation mode, enter and save initial coordinates
+	else {
+		velLen = pow(mouseX - click.x, 2) + pow(mouseY - click.y, 2);
+		System.out.println(velLen);
+		particles[existingParticles] = new Particle(click.x, click.y, (mouseX - click.x) / 100, (mouseY - click.y) / 100, 9, existingParticles);
+		existingParticles++;
+	}
+	creationMode = !creationMode; //toggle
+}
+
+void drawArrow(float cx, float cy, int len, float angle) {
+	pushMatrix();
+	translate(cx, cy);
+	rotate(radians(angle));
+	line(0, 0, len, 0);
+	line(len, 0, len - 8, -8);
+	line(len, 0, len - 8, 8);
+	popMatrix();
 }
 
 class Attractor {

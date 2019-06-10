@@ -12,8 +12,8 @@ class Particle {
 	PVector pos = new PVector(0, 0); //position
 	PVector vel = new PVector(0, 0); //velocity
 	PVector acc = new PVector(0, 0); //acceleration
-	int mass = 16;
-	float elasticity = 0.5;
+	int mass = 4;
+	float elasticity = 0.0;
 	float pe = 0;
 	float ke = 0;
 	color c;
@@ -27,11 +27,11 @@ class Particle {
 		pos.set(xpos, ypos);
 		vel.set(xvel, yvel);
 		this.mass = newMass;
-		this.c = colors[colorIndex];
+		this.c = colors[colorIndex % 6];
 
 		/* pos.set(300, 200); */
-		vel.set(1, 0);
-		/* vel.set(random(1, 10), random(1, 10)); */
+		/* vel.set(1, 0); */
+		vel.set(random(0, 2), random(0, 2));
 	}
 
 	PVector calculateForces() {
@@ -42,11 +42,11 @@ class Particle {
 			if (particle != this) {
 				force = PVector.sub(particle.pos, this.pos);
 				d = force.mag();
-				if (d <= 5) {
+				if (d <= 20) {
 					System.out.println("Particles occupied same location! Quitting program.");
 					/* System.exit(1); */
 				}
-				d = constrain(d, 100.0, 1000.0);
+				d = constrain(d, 32.0, 1000.0);
 				force.normalize();
 				float strength = (GRAVITATIONAL_CONSTANT * this.mass * particle.mass) / (d * d);
 				force.mult(strength);
@@ -56,7 +56,7 @@ class Particle {
 		/* for (Attractor attractor : attractors) { */
 		/*     force = PVector.sub(attractor.pos, this.pos); */
 		/*     d = force.mag(); */
-		/*     if (d <= 5) { */
+		/*     if (d <= 40) { */
 		/*         System.out.println("Particles occupied same location! Quitting program."); */
 		/*         System.exit(1); */
 		/*     } */
@@ -83,20 +83,20 @@ class Particle {
 		pe = 0;
 		for (Particle particle : particles) {
 			if (particle != this) pe += -0.5 * GRAVITATIONAL_CONSTANT * this.mass * particle.mass / PVector.sub(particle.pos, this.pos).mag();
-
-		for (Attractor attractor : attractors) pe = -0.5 * GRAVITATIONAL_CONSTANT * this.mass * attractor.mass / PVector.sub(attractor.pos, this.pos).mag();
 		}
 
+		for (Attractor attractor : attractors) pe = -0.5 * GRAVITATIONAL_CONSTANT * this.mass * attractor.mass / PVector.sub(attractor.pos, this.pos).mag();
+
 		//when encountering canvas edge
-		if (this.pos.x > 800 - this.mass / 2 || this.pos.x < this.mass / 2) this.vel.x = -this.vel.x;
-		if (this.pos.y < this.mass / 2 || 800 - this.pos.y < this.mass / 2) this.vel.y = -this.vel.y;
+		if (this.pos.x > 784 || this.pos.x < 16) this.vel.x = -this.vel.x;
+		if (this.pos.y < 16 || this.pos.y > 784) this.vel.y = -this.vel.y;
 
 		//collision with other particles
 		for (Particle particle : particles) {
 			if (this != particle) {
 				PVector distVec = PVector.sub(particle.pos, this.pos);
 				float distVecMag = distVec.mag();
-				float minDist = this.mass / 2 + particle.mass / 2;
+				float minDist = 32;
 				if (distVecMag < minDist) {
 					float distCorrection = (minDist - distVecMag) / 2.0;
 					PVector d = distVec.copy();
@@ -143,7 +143,7 @@ class Particle {
 		strokeWeight(1);
 		stroke(this.c);
 		fill(this.c);
-		ellipse(pos.x, pos.y, mass, mass);
+		ellipse(pos.x, pos.y, 32, 32);
 	}
 
 	void getProp() {
