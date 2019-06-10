@@ -31,7 +31,7 @@ class Particle {
 
 		/* pos.set(300, 200); */
 		/* vel.set(1, 0); */
-		vel.set(random(0, 2), random(0, 2));
+		/* vel.set(random(0, 2), random(0, 2)); */
 	}
 
 	PVector calculateForces() {
@@ -85,7 +85,7 @@ class Particle {
 			if (particle != this) pe += -0.5 * GRAVITATIONAL_CONSTANT * this.mass * particle.mass / PVector.sub(particle.pos, this.pos).mag();
 		}
 
-		for (Attractor attractor : attractors) pe = -0.5 * GRAVITATIONAL_CONSTANT * this.mass * attractor.mass / PVector.sub(attractor.pos, this.pos).mag();
+		/* for (Attractor attractor : attractors) pe = -0.5 * GRAVITATIONAL_CONSTANT * this.mass * attractor.mass / PVector.sub(attractor.pos, this.pos).mag(); */
 
 		//when encountering canvas edge
 		if (this.pos.x > 784 || this.pos.x < 16) this.vel.x = -this.vel.x;
