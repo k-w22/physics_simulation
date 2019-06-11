@@ -12,7 +12,7 @@ class Particle {
 	PVector pos = new PVector(0, 0); //position
 	PVector vel = new PVector(0, 0); //velocity
 	PVector acc = new PVector(0, 0); //acceleration
-	int mass = 4;
+	int mass = 9;
 	float elasticity = 0.0;
 	float pe = 0;
 	float ke = 0;

@@ -87,19 +87,31 @@ void draw() {
 			attractor.display();
 		}
 		*/
-	}
 
-	//panel
-	strokeWeight(1);
-	stroke(200);
-	fill(200);
-	rect(800, 0, 200, 800);
-	fill(0);
-	textSize(32);
-	textAlign(CENTER);
-	text("KE:", 900, 50);
-	textSize(16);
-	text(ke, 900, 75);
+		//panel
+		strokeWeight(1);
+		stroke(200);
+		fill(200);
+		rect(800, 0, 200, 800);
+		fill(0);
+		textSize(32);
+		textAlign(CENTER);
+		text("KE:", 900, 50);
+		textSize(16);
+		text(ke, 900, 75);
+		textSize(32);
+		text("mass:", 900, 500);
+		textSize(16);
+		text(particles.get(0).mass, 900, 525);
+		textSize(32);
+		text("elasticity:", 900, 600);
+		textSize(16);
+		text(particles.get(0).elasticity, 900, 625);
+		textSize(32);
+		text("G:", 900, 700);
+		textSize(16);
+		text(particles.get(0).GRAVITATIONAL_CONSTANT, 900, 725);
+	}
 }
 
 /*
@@ -125,6 +137,45 @@ void mouseClicked() {
 		existingParticles++;
 	}
 	creationMode = !creationMode; //toggle
+}
+
+void keyPressed() {
+	System.out.println(key);
+	if (key == CODED) {
+		if (keyCode == UP) {
+			for (Particle particle : particles) {
+				particle.elasticity += 0.1;
+				particle.elasticity = constrain(particle.elasticity, 0.0, 1.0);
+			}
+		} else if (keyCode == DOWN) {
+			for (Particle particle : particles) {
+				particle.elasticity -= 0.1;
+				particle.elasticity = constrain(particle.elasticity, 0.0, 1.0);
+			}
+		}
+	} else {
+		if (key == 'a') {
+			for (Particle particle : particles) {
+				particle.mass += 1;
+				particle.mass = constrain(particle.mass, 1, 14);
+			}
+		} else if (key == 'd') {
+			for (Particle particle : particles) {
+				particle.mass -= 1;
+				particle.mass = constrain(particle.mass, 1, 14);
+			}
+		} else if (key == 'w') {
+			for (Particle particle : particles) {
+				particle.GRAVITATIONAL_CONSTANT += 6.6743;
+				particle.GRAVITATIONAL_CONSTANT = constrain(particle.GRAVITATIONAL_CONSTANT, 0.0, 66.743);
+			}
+		} else if (key == 's') {
+			for (Particle particle : particles) {
+				particle.GRAVITATIONAL_CONSTANT -= 6.6743;
+				particle.GRAVITATIONAL_CONSTANT = constrain(particle.GRAVITATIONAL_CONSTANT, 0.0, 66.743);
+			}
+		}
+	}
 }
 
 void drawArrow(float cx, float cy, int len, float angle) {
