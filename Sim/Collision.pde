@@ -1,6 +1,8 @@
+/*
 Ball[] balls =  {
-	new Ball(200, 200, 20, 1, 0),
-	new Ball(400, 200, 20, -1 ,0)
+	new Ball(200, 200, 20, -1, 0),
+	new Ball(400, 200, 20, -2 ,0),
+	new Ball(500, 200, 20, -2.5, 0)
 };
 
 void setup() {
@@ -9,6 +11,7 @@ void setup() {
 
 void draw() {
 	background(51);
+	balls[0].checkCollision(balls[1]);
 
 	for (Ball b : balls) {
 		b.update();
@@ -17,6 +20,8 @@ void draw() {
 	}
 
 	balls[0].checkCollision(balls[1]);
+	balls[0].checkCollision(balls[2]);
+	balls[1].checkCollision(balls[2]);
 }
 
 
@@ -28,7 +33,7 @@ void draw() {
 class Ball {
 	PVector position;
 	PVector velocity;
-	float COR = 1.5;
+	float COR = 1.0;
 
 	float radius, m;
 
@@ -128,3 +133,4 @@ float sign(PVector a, PVector b) {
 	if (vdot(a, b) == 0) return 0;
 	return vdot(a, b) / abs(vdot(a, b));
 }
+*/

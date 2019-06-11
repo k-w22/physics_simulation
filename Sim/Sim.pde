@@ -12,11 +12,11 @@ color moss = color(173, 223, 173);
 color[] colors = {gold, red, blue, wood, pink, moss};
 
 //properties of system
-PVector com = new PVector(400, 400);
+PVector com = new PVector(500, 400);
 int comm = 0;
 float ke = 0;
 
-final static int MAX_NUMBER = 50; //max number of particles in canvas
+final static int MAX_NUMBER = 25; //max number of particles in canvas
 int existingParticles = 0; //number of particles in canvas
 ArrayList<Particle> particles;
 /* ArrayList<Attractor> attractors; */
@@ -26,14 +26,13 @@ PVector click = new PVector(0.0, 0.0); //coordinates of initial click
 float clickLen = 0; //length of velocity arrow during creation mode
 
 void setup() {
-	size(1000, 800);
-	/* frameRate(60); */
+	size(1200, 800);
 
 	particles = new ArrayList<Particle>(MAX_NUMBER); //create array with 0 meaningful elements
 
 	/*
 	for (int i = 0; i < MAX_NUMBER; i++) {
-		particles.add(new Particle((int) random(16, 784), 800 - (int) random(16, 784), 0, 0, 9, existingParticles));
+		particles.add(new Particle((int) random(16, 984), 800 - (int) random(16, 784), 0, 0, 9, existingParticles));
 		existingParticles++;
 	}
 
@@ -44,7 +43,7 @@ void setup() {
 }
 
 void draw() {
-	background(65);
+	background(35);
 
 	if (creationMode) {
 		strokeWeight(2);
@@ -62,6 +61,13 @@ void draw() {
 	if (existingParticles > 0) {
 		for (Particle particle : particles) particle.update();
 		for (Particle particle : particles) particle.display();
+		for (Particle particle : particles) {
+			if (particle.collisionState == -1) {
+				particle.pos.add(particle.futureVel);
+				particle.vel.set(particle.futureVel.x, particle.futureVel.y);
+				particle.collisionState = -2;
+			}
+		}
 
 		//center of mass and energy
 		com.mult(0);
@@ -92,25 +98,19 @@ void draw() {
 		strokeWeight(1);
 		stroke(200);
 		fill(200);
-		rect(800, 0, 200, 800);
+		rect(1000, 0, 200, 800);
 		fill(0);
 		textSize(32);
 		textAlign(CENTER);
-		text("KE:", 900, 50);
+		text("KE:", 1100, 50);
+		text("mass:", 1100, 500);
+		text("elasticity:", 1100, 600);
+		text("G:", 1100, 700);
 		textSize(16);
-		text(ke, 900, 75);
-		textSize(32);
-		text("mass:", 900, 500);
-		textSize(16);
-		text(particles.get(0).mass, 900, 525);
-		textSize(32);
-		text("elasticity:", 900, 600);
-		textSize(16);
-		text(particles.get(0).elasticity, 900, 625);
-		textSize(32);
-		text("G:", 900, 700);
-		textSize(16);
-		text(particles.get(0).GRAVITATIONAL_CONSTANT, 900, 725);
+		text(ke, 1100, 75);
+		text(particles.get(0).mass, 1100, 525);
+		text(particles.get(0).elasticity, 1100, 625);
+		text(particles.get(0).GRAVITATIONAL_CONSTANT / 6.6743, 1100, 725);
 	}
 }
 
@@ -118,16 +118,17 @@ void draw() {
 void mousePressed() {
 	for (Attractor attractor : attractors) attractor.clicked(mouseX, mouseY);
 }
-*/
 
-/*
 void mouseReleased() {
 	for (Attractor attractor : attractors) attractor.stopDragging();
 }
 */
 
 void mouseClicked() {
-	if (!creationMode) click.set(mouseX, mouseY); //not creation mode, enter and save initial coordinates
+	if (!creationMode) {
+		if (mouseX < 1000) click.set(mouseX, mouseY); //not creation mode, enter and save initial coordinates
+		else creationMode = !creationMode;
+	}
 	else {
 		PVector v = new PVector(mouseX - click.x, mouseY - click.y);
 		float vMag = v.mag();
@@ -140,7 +141,6 @@ void mouseClicked() {
 }
 
 void keyPressed() {
-	System.out.println(key);
 	if (key == CODED) {
 		if (keyCode == UP) {
 			for (Particle particle : particles) {
