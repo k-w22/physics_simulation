@@ -15,7 +15,7 @@ PVector com = new PVector(500, 400);
 int comm = 0;
 float GRAVITATIONAL_CONSTANT = 33.3715;
 int mass = 5;
-float elasticity = 0.0;
+float elasticity = 1.0;
 int container = -1;
 
 final static int MAX_NUMBER = 6; //max number of particles in canvas
