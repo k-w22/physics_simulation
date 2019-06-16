@@ -1,22 +1,25 @@
 import java.util.ArrayList;
 
-//*********************************
-//            colors
-color gold = color(212, 175, 55);
+//************colors***************
 color red = color(220, 20, 60);
 color blue = color(212, 240, 255);
 color wood = color(222, 184, 135);
 color pink = color(255, 85, 163);
 color moss = color(173, 223, 173);
+color yellow = color(255, 255, 0);
+color violet = color(238, 130, 238);
 //*********************************
-color[] colors = {gold, red, blue, wood, pink, moss};
+color[] colors = {red, blue, wood, pink, moss, yellow, violet};
 
 //properties of system
 PVector com = new PVector(500, 400);
 int comm = 0;
-float ke = 0;
+float GRAVITATIONAL_CONSTANT = 33.3715;
+int mass = 9;
+float elasticity = 0.0;
+int container = -1;
 
-final static int MAX_NUMBER = 25; //max number of particles in canvas
+final static int MAX_NUMBER = 10; //max number of particles in canvas
 int existingParticles = 0; //number of particles in canvas
 ArrayList<Particle> particles;
 /* ArrayList<Attractor> attractors; */
@@ -32,7 +35,7 @@ void setup() {
 
 	/*
 	for (int i = 0; i < MAX_NUMBER; i++) {
-		particles.add(new Particle((int) random(16, 984), 800 - (int) random(16, 784), 0, 0, 9, existingParticles));
+		particles.add(new Particle((int) random(16, 984), 800 - (int) random(16, 784), 0, 0, existingParticles));
 		existingParticles++;
 	}
 
@@ -52,32 +55,44 @@ void draw() {
 		circle(click.x, click.y, 10); //initial position
 		PVector v = new PVector(mouseX - click.x, mouseY - click.y);
 		float vMag = v.mag();
-		vMag = constrain(vMag, 0.0, 100.0);
+		vMag = constrain(vMag, 0.0, 200.0);
 		(v.normalize()).mult(vMag); //constrain size of arrow
 		line(click.x, click.y, click.x + v.x, click.y + v.y);
-		drawArrow(click.x + v.x, click.y + v.y, 20, 180 / PI * atan2(mouseY - click.y, mouseX - click.x));
+		if (pow(mouseX - click.x, 2) + pow(mouseY - click.y, 2) > 64) drawArrow(click.x + v.x, click.y + v.y, 20, 180 / PI * atan2(mouseY - click.y, mouseX - click.x));
 	}
 
 	if (existingParticles > 0) {
 		for (Particle particle : particles) particle.update();
-		for (Particle particle : particles) particle.display();
 		for (Particle particle : particles) {
-			if (particle.collisionState == -1) {
-				particle.pos.add(particle.futureVel);
-				particle.vel.set(particle.futureVel.x, particle.futureVel.y);
-				particle.collisionState = -2;
+			if (particle.state > 0) particle.pos.add(particle.vel);
+		}
+		for (Particle particle : particles) particle.display1();
+		for (Particle particle : particles) particle.display2();
+		for (Particle particle : particles) {
+			if (particle.collisionState > 0) {
+				if (particle.state > 0) particle.pos = particle.futurePos;
+			}
+		}
+		for (Particle particle : particles) particle.display3();
+		for (Particle particle : particles) { //update any particles that are colliding
+			if (particle.collisionState > 0) {
+				if (particle.state > 0) {
+					particle.pos.add(particle.futureVel);
+					particle.vel.set(particle.futureVel.x, particle.futureVel.y);
+					particle.collisionState *= -1;
+				}
 			}
 		}
 
 		//center of mass and energy
-		com.mult(0);
+		com.set(0, 0);
 		comm = 0;
-		ke = 0;
 		for (Particle particle : particles) {
-			com.x += particle.mass * particle.pos.x;
-			com.y += particle.mass * particle.pos.y;
-			comm += particle.mass;
-			ke += particle.ke;
+			if (particle.state > 0) {
+				com.x += mass * particle.pos.x;
+				com.y += mass * particle.pos.y;
+				comm += mass;
+			}
 		}
 		com.x /= comm;
 		com.y /= comm;
@@ -93,25 +108,26 @@ void draw() {
 			attractor.display();
 		}
 		*/
-
-		//panel
-		strokeWeight(1);
-		stroke(200);
-		fill(200);
-		rect(1000, 0, 200, 800);
-		fill(0);
-		textSize(32);
-		textAlign(CENTER);
-		text("KE:", 1100, 50);
-		text("mass:", 1100, 500);
-		text("elasticity:", 1100, 600);
-		text("G:", 1100, 700);
-		textSize(16);
-		text(ke, 1100, 75);
-		text(particles.get(0).mass, 1100, 525);
-		text(particles.get(0).elasticity, 1100, 625);
-		text(particles.get(0).GRAVITATIONAL_CONSTANT / 6.6743, 1100, 725);
 	}
+
+	//panel
+	strokeWeight(1);
+	stroke(200);
+	fill(200);
+	rect(1000, 0, 200, 800);
+	fill(0);
+	textSize(32);
+	textAlign(CENTER);
+	text("Particles:", 1100, 50);
+	if (container > 0) text("container on", 1100, 150);
+	text("mass:", 1100, 500);
+	text("elasticity:", 1100, 600);
+	text("G:", 1100, 700);
+	textSize(16);
+	text(existingParticles, 1100, 75);
+	text(mass, 1100, 525);
+	text(elasticity, 1100, 625);
+	text(GRAVITATIONAL_CONSTANT / 6.6743, 1100, 725);
 }
 
 /*
@@ -125,56 +141,59 @@ void mouseReleased() {
 */
 
 void mouseClicked() {
-	if (!creationMode) {
-		if (mouseX < 1000) click.set(mouseX, mouseY); //not creation mode, enter and save initial coordinates
-		else creationMode = !creationMode;
+	if (existingParticles < MAX_NUMBER) {
+		if (!creationMode) {
+			int tooClose = -1;
+			for (Particle particle : particles) {
+				if (pow(particle.pos.x - mouseX, 2) + pow(particle.pos.y - mouseY, 2) <= 1024) {
+					tooClose = 1;
+					creationMode = !creationMode;
+					break;
+				}
+			}
+			if (tooClose == -1) {
+				if (mouseX < 1000) click.set(mouseX, mouseY); //not creation mode, enter and save initial coordinates
+				else creationMode = !creationMode;
+			}
+		}
+		else {
+			PVector v = new PVector(mouseX - click.x, mouseY - click.y);
+			float vMag = v.mag();
+			vMag = constrain(vMag, 0.0, 200.0);
+			(v.normalize()).mult(vMag); //constrain size of arrow
+			particles.add(new Particle(click.x, click.y, v.x / 50, v.y / 50, existingParticles)); //constrain velocity
+			existingParticles++;
+		}
+		creationMode = !creationMode; //toggle
 	}
-	else {
-		PVector v = new PVector(mouseX - click.x, mouseY - click.y);
-		float vMag = v.mag();
-		vMag = constrain(vMag, 0.0, 100.0);
-		(v.normalize()).mult(vMag); //constrain size of arrow
-		particles.add(new Particle(click.x, click.y, v.x / 50, v.y / 50, 9, existingParticles)); //constrain velocity
-		existingParticles++;
-	}
-	creationMode = !creationMode; //toggle
 }
 
 void keyPressed() {
 	if (key == CODED) {
 		if (keyCode == UP) {
-			for (Particle particle : particles) {
-				particle.elasticity += 0.1;
-				particle.elasticity = constrain(particle.elasticity, 0.0, 1.0);
-			}
+			elasticity += 0.1;
+			elasticity = constrain(elasticity, 0.0, 1.5);
 		} else if (keyCode == DOWN) {
-			for (Particle particle : particles) {
-				particle.elasticity -= 0.1;
-				particle.elasticity = constrain(particle.elasticity, 0.0, 1.0);
-			}
+			elasticity -= 0.1;
+			elasticity = constrain(elasticity, 0.0, 1.5);
 		}
 	} else {
 		if (key == 'a') {
-			for (Particle particle : particles) {
-				particle.mass += 1;
-				particle.mass = constrain(particle.mass, 1, 14);
-			}
+			mass += 1;
+			mass = constrain(mass, 1, 20);
 		} else if (key == 'd') {
-			for (Particle particle : particles) {
-				particle.mass -= 1;
-				particle.mass = constrain(particle.mass, 1, 14);
-			}
+			mass -= 1;
+			mass = constrain(mass, 1, 20);
 		} else if (key == 'w') {
-			for (Particle particle : particles) {
-				particle.GRAVITATIONAL_CONSTANT += 6.6743;
-				particle.GRAVITATIONAL_CONSTANT = constrain(particle.GRAVITATIONAL_CONSTANT, 0.0, 66.743);
-			}
+			GRAVITATIONAL_CONSTANT += 6.6743;
+			GRAVITATIONAL_CONSTANT = constrain(GRAVITATIONAL_CONSTANT, 0.0, 66.743);
 		} else if (key == 's') {
-			for (Particle particle : particles) {
-				particle.GRAVITATIONAL_CONSTANT -= 6.6743;
-				particle.GRAVITATIONAL_CONSTANT = constrain(particle.GRAVITATIONAL_CONSTANT, 0.0, 66.743);
-			}
-		}
+			GRAVITATIONAL_CONSTANT -= 6.6743;
+			GRAVITATIONAL_CONSTANT = constrain(GRAVITATIONAL_CONSTANT, 0.0, 66.743);
+		} else if (key == 'r') {
+			particles = new ArrayList<Particle>();
+			existingParticles = 0;
+		} else if (key == 'c') container *= -1;
 	}
 }
 
