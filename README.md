@@ -58,4 +58,4 @@ To create particles, click in the canvas and direct the mouse in the direction o
 
 - particles behave unrealistically under gravity when they have low elasticity and collide
 
-- particles tend to behave unrealistically when both the mass and gravitational constant strength are high
+- particles tend to start behaving unrealistically when both the mass and gravitational constant strength are high
