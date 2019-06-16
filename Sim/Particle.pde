@@ -2,31 +2,27 @@ class Particle {
 	//*****************CONSTANTS**************************
 	final static int ON = 1;
 	final static int OFF = -1;
-	final static int collisionOn = 1;
-	final static int collisionOff = -1;
 	//****************************************************
 
 	//vars
 	PVector pos = new PVector(0, 0); //position
 	PVector vel = new PVector(0, 0); //velocity
-	PVector futurePos = new PVector(0, 0); //future position used in collision calculations
+	PVector posCorrect = new PVector(0, 0); //future position used in collision calculations
 	PVector futureVel = new PVector(0, 0); //future velocity used in collision calculations
 	PVector acc = new PVector(0, 0); //acceleration
 	color c;
-	int collisionState = collisionOff;
+	int collisionState = OFF;
 	int state = ON;
 
 	Particle() {
-		this.c = colors[(int) random(0, 7)];
+		this.c = colors[(int) random(0, 6)];
 	}
 
 	Particle(float xpos, float ypos, float xvel, float yvel, int colorIndex) {
 		this();
 		pos.set(xpos, ypos);
 		vel.set(xvel, yvel);
-		c = colors[colorIndex % 7];
-
-		/* vel.set(random(0, 2), random(0, 2)); */
+		c = colors[colorIndex % 6];
 	}
 
 	PVector calculateForces() {
@@ -45,7 +41,7 @@ class Particle {
 						System.exit(1);
 					}
 					*/
-					d = constrain(d, 32.0, 1000.0);
+					d = constrain(d, 32.0, 1281.0);
 					force.normalize();
 					float strength = (GRAVITATIONAL_CONSTANT * mass * mass) / (d * d);
 					force.mult(strength);
@@ -85,7 +81,6 @@ class Particle {
 			vel.add(acc);
 			float temp = constrain(vel.mag(), 0.0, 4.0);
 			(vel.normalize()).mult(temp);
-			vel.set(formatter(vel.x), formatter(vel.y));
 			acc.mult(0);
 		}
 	}
@@ -113,20 +108,19 @@ class Particle {
 		if (state == ON) {
 			//correct positions during collisoins is necessary
 			for (Particle particle : particles) {
-				if (this != particle) {
-					if (particle.state == ON) {
+				if (particle.state == ON) {
+					if (this != particle) {
 						PVector distVec = PVector.sub(particle.pos, this.pos);
 						float distVecMag = distVec.mag();
 						float minDist = 32;
 						if (distVecMag <= minDist) {
-							this.collisionState = collisionOn;
-							particle.collisionState = collisionOn;
+							this.collisionState = ON;
+							particle.collisionState = ON;
 							//if particles are too close, move them apart
 							float distCorrection = (minDist - distVecMag) / 2.0;
 							PVector d = distVec.copy();
 							PVector correctionVec = d.normalize().mult(distCorrection);
-							this.futurePos = this.pos.copy();
-							this.futurePos.sub(correctionVec);
+							posCorrect.add(correctionVec);
 						}
 					}
 				}
@@ -135,14 +129,13 @@ class Particle {
 	}
 
 	void display3() {
-		if (state == ON) {
+		if (collisionState == ON) {
 			for (Particle particle : particles) {
-				if (this != particle) {
-					if (particle.state == ON) {
+				if (particle.state == ON) {
+					if (this != particle) {
 						PVector distVec = PVector.sub(particle.pos, this.pos);
 						float distVecMag = distVec.mag();
-						float minDist = 32;
-						if (distVecMag <= minDist) {
+						if (distVecMag <= 32.001) {
 							//calculate normal and tangent vectors at collision point
 							PVector collisionPoint = new PVector((this.pos.x + particle.pos.x) / 2, (this.pos.y + particle.pos.y) / 2);
 							PVector normal = PVector.sub(this.pos, collisionPoint);
@@ -172,6 +165,7 @@ class Particle {
 					}
 				}
 			}
+		}
 
 			/*
 			for (Attractor attractor: attractors) {
@@ -182,11 +176,10 @@ class Particle {
 			}
 			*/
 
-			strokeWeight(1);
-			stroke(this.c);
-			fill(this.c);
-			ellipse(pos.x, pos.y, 32, 32);
-		}
+		strokeWeight(1);
+		stroke(c);
+		fill(c);
+		ellipse(pos.x, pos.y, 32, 32);
 	}
 
 	float vdot(PVector a, PVector b) {

@@ -1,7 +1,6 @@
 import java.util.ArrayList;
 
 //************colors***************
-color red = color(220, 20, 60);
 color blue = color(212, 240, 255);
 color wood = color(222, 184, 135);
 color pink = color(255, 85, 163);
@@ -9,17 +8,17 @@ color moss = color(173, 223, 173);
 color yellow = color(255, 255, 0);
 color violet = color(238, 130, 238);
 //*********************************
-color[] colors = {red, blue, wood, pink, moss, yellow, violet};
+color[] colors = {blue, wood, pink, moss, yellow, violet};
 
 //properties of system
 PVector com = new PVector(500, 400);
 int comm = 0;
 float GRAVITATIONAL_CONSTANT = 33.3715;
-int mass = 9;
+int mass = 5;
 float elasticity = 0.0;
 int container = -1;
 
-final static int MAX_NUMBER = 10; //max number of particles in canvas
+final static int MAX_NUMBER = 6; //max number of particles in canvas
 int existingParticles = 0; //number of particles in canvas
 ArrayList<Particle> particles;
 /* ArrayList<Attractor> attractors; */
@@ -56,24 +55,29 @@ void draw() {
 		PVector v = new PVector(mouseX - click.x, mouseY - click.y);
 		float vMag = v.mag();
 		vMag = constrain(vMag, 0.0, 200.0);
-		(v.normalize()).mult(vMag); //constrain size of arrow
+		(v.normalize()).mult(vMag); //constrain length of arrow
 		line(click.x, click.y, click.x + v.x, click.y + v.y);
 		if (pow(mouseX - click.x, 2) + pow(mouseY - click.y, 2) > 64) drawArrow(click.x + v.x, click.y + v.y, 20, 180 / PI * atan2(mouseY - click.y, mouseX - click.x));
 	}
 
 	if (existingParticles > 0) {
-		for (Particle particle : particles) particle.update();
+		for (Particle particle : particles) particle.update(); //calculate quantities
 		for (Particle particle : particles) {
-			if (particle.state > 0) particle.pos.add(particle.vel);
+			if (particle.state > 0) particle.pos.add(particle.vel); //update positions
 		}
-		for (Particle particle : particles) particle.display1();
-		for (Particle particle : particles) particle.display2();
+		for (Particle particle : particles) particle.display1(); //boundary behavior
+		for (Particle particle : particles) particle.display2(); //collisions between particles step 1
 		for (Particle particle : particles) {
 			if (particle.collisionState > 0) {
-				if (particle.state > 0) particle.pos = particle.futurePos;
+				if (particle.state > 0) {
+					particle.pos.sub(particle.posCorrect); //fix positions
+					particle.posCorrect.mult(0);
+				}
 			}
 		}
-		for (Particle particle : particles) particle.display3();
+		for (Particle particle : particles) {
+			if (particle.state > 0) particle.display3(); //collision calculation
+		}
 		for (Particle particle : particles) { //update any particles that are colliding
 			if (particle.collisionState > 0) {
 				if (particle.state > 0) {
@@ -84,7 +88,7 @@ void draw() {
 			}
 		}
 
-		//center of mass and energy
+		//center of mass
 		com.set(0, 0);
 		comm = 0;
 		for (Particle particle : particles) {
@@ -145,7 +149,7 @@ void mouseClicked() {
 		if (!creationMode) {
 			int tooClose = -1;
 			for (Particle particle : particles) {
-				if (pow(particle.pos.x - mouseX, 2) + pow(particle.pos.y - mouseY, 2) <= 1024) {
+				if (pow(particle.pos.x - mouseX, 2) + pow(particle.pos.y - mouseY, 2) <= 1024) { //initial position too close to another particle
 					tooClose = 1;
 					creationMode = !creationMode;
 					break;
@@ -180,16 +184,16 @@ void keyPressed() {
 	} else {
 		if (key == 'a') {
 			mass += 1;
-			mass = constrain(mass, 1, 20);
+			mass = constrain(mass, 1, 10);
 		} else if (key == 'd') {
 			mass -= 1;
-			mass = constrain(mass, 1, 20);
+			mass = constrain(mass, 1, 10);
 		} else if (key == 'w') {
 			GRAVITATIONAL_CONSTANT += 6.6743;
-			GRAVITATIONAL_CONSTANT = constrain(GRAVITATIONAL_CONSTANT, 0.0, 66.743);
+			GRAVITATIONAL_CONSTANT = constrain(GRAVITATIONAL_CONSTANT, 0.0, 46.7201);
 		} else if (key == 's') {
 			GRAVITATIONAL_CONSTANT -= 6.6743;
-			GRAVITATIONAL_CONSTANT = constrain(GRAVITATIONAL_CONSTANT, 0.0, 66.743);
+			GRAVITATIONAL_CONSTANT = constrain(GRAVITATIONAL_CONSTANT, 0.0, 46.7201);
 		} else if (key == 'r') {
 			particles = new ArrayList<Particle>();
 			existingParticles = 0;
@@ -207,6 +211,7 @@ void drawArrow(float cx, float cy, int len, float angle) {
 	popMatrix();
 }
 
+/*
 class Attractor {
 	int mass;
 	PVector pos;
@@ -279,3 +284,4 @@ void whenImBored() {
 		}
 	}
 }
+*/
